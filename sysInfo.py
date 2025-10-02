@@ -40,6 +40,9 @@ def get_top_mac_address():
 KAFKA_BROKER = "10.0.28.44:9092"
 TOPIC = f"Iot-{get_top_mac_address()}"
 
+def bytes_to_gb(bytes_value):
+    return round(bytes_value / (1024**3), 1)  # làm tròn 1 chữ số thập phân
+
 def get_system_info():
     uname = platform.uname()
     vm = psutil.virtual_memory()
@@ -56,12 +59,12 @@ def get_system_info():
         "cpu_cores": psutil.cpu_count(logical=False),
         "cpu_usage_percent": psutil.cpu_percent(interval=1),
         "cpu_frequency_mhz": cpu_freq.current if cpu_freq else 0,
-        "total_ram": vm.total,
-        "used_ram": vm.used,
-        "free_ram": vm.available,
+        "total_ram": f"{bytes_to_gb(vm.total)} GB",
+        "used_ram": f"{bytes_to_gb(vm.used)} GB",
+        "free_ram": f"{bytes_to_gb(vm.available)} GB",
         "ram_usage_percent": vm.percent,
-        "total_swap": swap.total,
-        "used_swap": swap.used,
+        "total_swap": f"{bytes_to_gb(swap.total)} GB",
+        "used_swap": f"{bytes_to_gb(swap.used)} GB",
         "swap_usage_percent": swap.percent,
         "timestamp": datetime.utcnow().isoformat(),
         "allow": True,  # giả định mặc định cho phép
