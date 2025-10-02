@@ -1,0 +1,22 @@
+# Bỏ qua thư mục venv
+venv/
+ENV/
+env/
+
+# Bỏ qua file Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Bỏ qua file log
+*.log
+
+# Bỏ qua file IDE
+.idea/
+.vscode/
+*.iml
+
+# Bỏ qua file hệ thống
+.DS_Store
+Thumbs.db
