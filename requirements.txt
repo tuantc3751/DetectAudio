@@ -2,3 +2,4 @@ psutil
 confluent-kafka
 minio
 sounddevice
+numpy
