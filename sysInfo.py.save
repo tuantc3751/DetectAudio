@@ -7,20 +7,16 @@ import json
 from datetime import datetime
 from confluent_kafka import Producer
 
-import psutil
-
 def get_top_mac_address():
+    # Lấy thống kê IO của từng NIC (Network Interface Card)
     net_io = psutil.net_io_counters(pernic=True)
     if_addrs = psutil.net_if_addrs()
 
     top_iface = None
     top_bytes = 0
 
+    # Tìm card mạng có lưu lượng lớn nhất
     for iface, counters in net_io.items():
-        # Bỏ qua loopback và VPN
-        if iface.startswith("lo") or iface.startswith("tun") or iface.startswith("docker"):
-            continue
-
         total_bytes = counters.bytes_sent + counters.bytes_recv
         if total_bytes > top_bytes:
             top_bytes = total_bytes
@@ -29,17 +25,16 @@ def get_top_mac_address():
     if not top_iface:
         return None
 
+    # Lấy địa chỉ MAC của card mạng đó
     mac_addr = None
     for snic in if_addrs[top_iface]:
-        # một số hệ thống dùng AF_PACKET thay cho AF_LINK
-        if getattr(psutil, "AF_LINK", None) == snic.family or snic.family == 17:
+        if snic.family == psutil.AF_LINK:  # MAC Address
             mac_addr = snic.address
             break
 
     if mac_addr:
-        mac_addr = mac_addr.upper().replace(":", "-")
+        # format lại "00-FF-F1-FC-1E-CA"
     return mac_addr
-
 
 KAFKA_BROKER = "10.0.28.44:9092"
 TOPIC = f"Iot-{get_top_mac_address()}"

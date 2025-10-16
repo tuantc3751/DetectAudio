@@ -22,15 +22,17 @@ if not minio_client.bucket_exists(bucket_name):
     minio_client.make_bucket(bucket_name)
 
 def get_top_mac_address():
-    # Lấy thống kê IO của từng NIC (Network Interface Card)
     net_io = psutil.net_io_counters(pernic=True)
     if_addrs = psutil.net_if_addrs()
 
     top_iface = None
     top_bytes = 0
 
-    # Tìm card mạng có lưu lượng lớn nhất
     for iface, counters in net_io.items():
+        # Bỏ qua loopback và VPN
+        if iface.startswith("lo") or iface.startswith("tun") or iface.startswith("docker"):
+            continue
+
         total_bytes = counters.bytes_sent + counters.bytes_recv
         if total_bytes > top_bytes:
             top_bytes = total_bytes
@@ -39,17 +41,16 @@ def get_top_mac_address():
     if not top_iface:
         return None
 
-    # Lấy địa chỉ MAC của card mạng đó
     mac_addr = None
     for snic in if_addrs[top_iface]:
-        if snic.family == psutil.AF_LINK:  # MAC Address
+        # một số hệ thống dùng AF_PACKET thay cho AF_LINK
+        if getattr(psutil, "AF_LINK", None) == snic.family or snic.family == 17:
             mac_addr = snic.address
             break
 
     if mac_addr:
-        # format lại "00-FF-F1-FC-1E-CA"
         mac_addr = mac_addr.upper().replace(":", "-")
-    return mac_addr, top_iface, top_bytes
+    return mac_addr
 
 def record_audio(duration=5, samplerate=44100, channels=1):
     """Ghi âm và trả về bytes dạng WAV"""
@@ -86,7 +87,7 @@ def upload_audio(mac_addr: str, audio_buffer: io.BytesIO):
 
 
 if __name__ == "__main__":
-    mac_addr, iface, usage = get_top_mac_address()
+    mac_addr= get_top_mac_address()
     while True:
         audio_buf = record_audio(duration=5)
         upload_audio(mac_addr, audio_buf)
