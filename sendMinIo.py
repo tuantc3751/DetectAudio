@@ -9,7 +9,7 @@ from minio import Minio
 
 # --- Cấu hình MinIO ---
 minio_client = Minio(
-    "10.0.28.46:9000",        # API port
+    "160.191.50.208:9000",        # API port
     access_key="admin",       # thay bằng user của bạn
     secret_key="admin12345",  # thay bằng password
     secure=False
