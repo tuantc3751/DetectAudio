@@ -41,7 +41,7 @@ def get_top_mac_address():
     return mac_addr
 
 
-KAFKA_BROKER = "10.0.28.44:9092"
+KAFKA_BROKER = "160.191.50.208:9092"
 TOPIC = f"Iot-{get_top_mac_address()}"
 
 def bytes_to_gb(bytes_value):
