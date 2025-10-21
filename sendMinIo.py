@@ -11,7 +11,7 @@ from minio import Minio
 minio_client = Minio(
     "160.191.50.208:9000",        # API port
     access_key="admin",       # thay bằng user của bạn
-    secret_key="admin12345",  # thay bằng password
+    secret_key="admin123",  # thay bằng password
     secure=False
 )
 
