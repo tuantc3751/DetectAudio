@@ -27,9 +27,9 @@ bucket_name = "audio"
 model_path = "./model/best_model.weights.h5"
 IMG_SIZE = 224
 labels = ["Mania", "Normal"]
-# # Tạo bucket nếu chưa có
-# if not minio_client.bucket_exists(bucket_name):
-#     minio_client.make_bucket(bucket_name)
+# Tạo bucket nếu chưa có
+if not minio_client.bucket_exists(bucket_name):
+    minio_client.make_bucket(bucket_name)
 
 def get_top_mac_address():
     net_io = psutil.net_io_counters(pernic=True)
