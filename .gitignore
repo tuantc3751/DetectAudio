@@ -20,3 +20,5 @@ __pycache__/
 # Bỏ qua file hệ thống
 .DS_Store
 Thumbs.db
+
+*.h5

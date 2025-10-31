@@ -3,3 +3,8 @@ confluent-kafka
 minio
 sounddevice
 numpy
+pyaudio
+tensorflow
+librosa
+soundfile
+efficientnet
