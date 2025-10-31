@@ -167,6 +167,9 @@ def upload_audio(mac_addr: str, audio_buffer: io.BytesIO):
     print(f"[INFO] filename: {filename}")
     object_name = f"Client-{mac_addr}/{date_folder}/{filename}"
 
+    # 🔧 Thêm dòng này để reset con trỏ buffer:
+    audio_buffer.seek(0)
+
     minio_client.put_object(
         bucket_name,
         object_name,
