@@ -6,6 +6,12 @@ import psutil
 from datetime import datetime
 import sounddevice as sd
 from minio import Minio
+import tensorflow as tf
+import librosa
+import soundfile as sf
+from efficientnet.tfkeras import EfficientNetB0
+from tensorflow.keras.models import Sequential
+from tensorflow.keras import layers as L
 
 # --- Cấu hình MinIO ---
 minio_client = Minio(
@@ -17,9 +23,13 @@ minio_client = Minio(
 
 bucket_name = "audio"
 
-# Tạo bucket nếu chưa có
-if not minio_client.bucket_exists(bucket_name):
-    minio_client.make_bucket(bucket_name)
+# Cấu hình AI
+model_path = "./model/best_model.weights.h5"
+IMG_SIZE = 224
+labels = ["Mania", "Normal"]
+# # Tạo bucket nếu chưa có
+# if not minio_client.bucket_exists(bucket_name):
+#     minio_client.make_bucket(bucket_name)
 
 def get_top_mac_address():
     net_io = psutil.net_io_counters(pernic=True)
@@ -69,11 +79,92 @@ def record_audio(duration=5, samplerate=44100, channels=1):
     buffer.seek(0)
     return buffer
 
+def preprocess_audio(audio_buffer: io.BytesIO):
+    """Hàm tiền xử lý audio"""
+    # Đọc dữ liệu từ buffer
+    audio_buffer.seek(0)  # đảm bảo đọc từ đầu
+    audio, sample_rate = sf.read(audio_buffer, dtype='float32')
+    # Nếu cần đảm bảo sample_rate = 16000
+    if sample_rate != 16000:
+        audio = librosa.resample(audio, orig_sr=sample_rate, target_sr=16000)
+        sample_rate = 16000
+    # Convert to TensorFlow tensor
+    audio = tf.convert_to_tensor(audio, dtype=tf.float32)
+    # Define target length for 10 seconds
+    target_length = 16000 * 10
+    audio_length = tf.shape(audio)[0]
+    # Calculate number of full 10-second segments
+    num_segments = audio_length // target_length
+    results = []
+    for i in range(num_segments+1):
+        # Extract segment
+        start = i * target_length
+        end = start + target_length
+        segment = audio[start:end]
+        # Compute STFT
+        stft = tf.signal.stft(segment, frame_length=480, frame_step=160, fft_length=512)
+        spectrogram = tf.abs(stft)
+        # Convert to mel spectrogram
+        num_spectrogram_bins = tf.shape(spectrogram)[-1]
+        linear_to_mel_weight_matrix = tf.signal.linear_to_mel_weight_matrix(
+            num_mel_bins=128,
+            num_spectrogram_bins=num_spectrogram_bins,
+            sample_rate=16000,
+            lower_edge_hertz=0.0,
+            upper_edge_hertz=8000.0
+        )
+        mel_spectrogram = tf.tensordot(spectrogram, linear_to_mel_weight_matrix, 1)
+        mel_spectrogram.set_shape(spectrogram.shape[:-1].concatenate([128]))
+        # Log scale
+        log_mel_spectrogram = tf.math.log(mel_spectrogram + 1e-6)
+        # Prepare as image for EfficientNet (resize to 224x224x3)
+        image = tf.expand_dims(log_mel_spectrogram, -1)
+        image = tf.image.resize(image, [224, 224])
+        image = tf.repeat(image, repeats=3, axis=-1)
+        results.append(image)
+    return results if results else None
+
+
+def load_model():
+    """Hàm load model AI"""    
+    efn = EfficientNetB0(
+        include_top=False, 
+        weights='noisy-student', 
+        pooling='avg', 
+        input_shape=(IMG_SIZE, IMG_SIZE, 3))
+
+    model = Sequential()
+    model.add(efn)
+    model.add(L.BatchNormalization())
+    model.add(L.Dense(128, activation='softmax'))
+    model.add(L.BatchNormalization())
+    model.add(L.Dense(2, activation='softmax'))
+    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+    model.load_weights(model_path)
+    print(f"[INFO] Loaded model from {model_path}")
+    return model
+
+def infer_audio(model, audio_buffer: io.BytesIO):
+    """Hàm inference audio"""
+    audio_processed = preprocess_audio(audio_buffer)
+    if audio_processed is None:
+        return None
+    predictions = model.predict(tf.convert_to_tensor(audio_processed))
+    return predictions
 
 def upload_audio(mac_addr: str, audio_buffer: io.BytesIO):
     """Upload file audio WAV lên MinIO"""
+    model = load_model()
+    predictions = infer_audio(model, audio_buffer)
+    print(f"[INFO] predictions: {predictions}")
+    predict = predictions.argmax(axis=1)
+    print(f"[INFO] predict: {predict}")
+    label = [labels[i] for i in predict]
+    print(f"[INFO] label: {label}")
+
     date_folder = datetime.now().strftime("%Y-%m-%d")
-    filename = datetime.now().strftime("%Y%m%d_%H%M%S") + f".wav"
+    filename = datetime.now().strftime("%Y%m%d_%H%M%S") + f"_{label[0]}_{predictions[0][predict[0]]}.wav"
+    print(f"[INFO] filename: {filename}")
     object_name = f"Client-{mac_addr}/{date_folder}/{filename}"
 
     minio_client.put_object(
@@ -84,7 +175,6 @@ def upload_audio(mac_addr: str, audio_buffer: io.BytesIO):
         content_type="audio/wav"
     )
     print(f"[INFO] Uploaded audio to MinIO: {object_name}")
-
 
 if __name__ == "__main__":
     mac_addr= get_top_mac_address()
