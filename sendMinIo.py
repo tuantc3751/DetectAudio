@@ -180,7 +180,16 @@ def upload_audio(mac_addr: str, audio_buffer: io.BytesIO):
     print(f"[INFO] Uploaded audio to MinIO: {object_name}")
 
 if __name__ == "__main__":
-    mac_addr= get_top_mac_address()
+    mac_addr = get_top_mac_address()
+    print("[INFO] Chương trình sẵn sàng. Nhấn 'c' để bắt đầu ghi âm hoặc 'q' để thoát.\n")
+
     while True:
-        audio_buf = record_audio(duration=5)
-        upload_audio(mac_addr, audio_buf)
+        user_input = input("👉 Nhập 'c' để bắt đầu thu âm (hoặc 'q' để thoát): ").strip().lower()
+        if user_input == 'q':
+            print("[INFO] Kết thúc chương trình.")
+            break
+        elif user_input == 'c':
+            audio_buf = record_audio(duration=5)
+            upload_audio(mac_addr, audio_buf)
+        else:
+            print("[INFO] Ký tự không hợp lệ, vui lòng nhập lại.")
