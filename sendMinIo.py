@@ -90,10 +90,10 @@ def preprocess_audio(audio_buffer: io.BytesIO):
         sample_rate = 16000
     # Convert to TensorFlow tensor
     audio = tf.convert_to_tensor(audio, dtype=tf.float32)
-    # Define target length for 10 seconds
-    target_length = 16000 * 10
+    # Define target length for 20 seconds
+    target_length = 16000 * 100
     audio_length = tf.shape(audio)[0]
-    # Calculate number of full 10-second segments
+    # Calculate number of full 20-second segments
     num_segments = audio_length // target_length
     results = []
     for i in range(num_segments+1):
@@ -189,7 +189,7 @@ if __name__ == "__main__":
             print("[INFO] Kết thúc chương trình.")
             break
         elif user_input == 'c':
-            audio_buf = record_audio(duration=5)
+            audio_buf = record_audio(duration=20)
             upload_audio(mac_addr, audio_buf)
         else:
             print("[INFO] Ký tự không hợp lệ, vui lòng nhập lại.")
