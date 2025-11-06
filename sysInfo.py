@@ -40,9 +40,10 @@ def get_top_mac_address():
         mac_addr = mac_addr.upper().replace(":", "-")
     return mac_addr
 
-
+# --- Dùng cùng một MAC ---
+MAC_ADDR = get_top_mac_address()
 KAFKA_BROKER = "160.191.50.208:9092"
-TOPIC = f"Iot-{get_top_mac_address()}"
+TOPIC = f"Iot-{MAC_ADDR}"
 
 def bytes_to_gb(bytes_value):
     return round(bytes_value / (1024**3), 1)  # làm tròn 1 chữ số thập phân
@@ -72,8 +73,9 @@ def get_system_info():
         "swap_usage_percent": swap.percent,
         "timestamp": datetime.utcnow().isoformat(),
         "allow": True,  # giả định mặc định cho phép
-        "mac_address": ':'.join(['{:02x}'.format((uuid.getnode() >> i) & 0xff)
-                                 for i in range(0, 8*6, 8)][::-1]),
+        # "mac_address": ':'.join(['{:02x}'.format((uuid.getnode() >> i) & 0xff)
+        #                          for i in range(0, 8*6, 8)][::-1]),
+        "mac_address": MAC_ADDR,
         "timespan": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
 
