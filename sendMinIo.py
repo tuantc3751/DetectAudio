@@ -79,6 +79,34 @@ def record_audio(duration=5, samplerate=44100, channels=1):
     buffer.seek(0)
     return buffer
 
+def record_audio_unlimited(samplerate=44100, channels=1):
+    print("[INFO] Bắt đầu ghi âm... Nhấn 's' rồi ENTER để dừng.")
+
+    audio_frames = []
+
+    def callback(indata, frames, time, status):
+        audio_frames.append(indata.copy())
+
+    with sd.InputStream(samplerate=samplerate, channels=channels, dtype="int16", callback=callback):
+        while True:
+            cmd = input()
+            if cmd.strip().lower() == "s":
+                print("[INFO] Đã dừng ghi âm.")
+                break
+
+    audio_data = b"".join(frame.tobytes() for frame in audio_frames)
+
+    buffer = io.BytesIO()
+    with wave.open(buffer, 'wb') as wf:
+        wf.setnchannels(channels)
+        wf.setsampwidth(2)
+        wf.setframerate(samplerate)
+        wf.writeframes(audio_data)
+
+    buffer.seek(0)
+    return buffer
+
+
 def preprocess_audio(audio_buffer: io.BytesIO):
     """Hàm tiền xử lý audio"""
     # Đọc dữ liệu từ buffer
@@ -152,7 +180,7 @@ def infer_audio(model, audio_buffer: io.BytesIO):
     predictions = model.predict(tf.convert_to_tensor(audio_processed))
     return predictions
 
-def upload_audio(mac_addr: str, audio_buffer: io.BytesIO):
+def upload_audio(mac_addr: str, audio_buffer: io.BytesIO, user_folder: str):
     """Upload file audio WAV lên MinIO"""
     model = load_model()
     predictions = infer_audio(model, audio_buffer)
@@ -165,7 +193,7 @@ def upload_audio(mac_addr: str, audio_buffer: io.BytesIO):
     date_folder = datetime.now().strftime("%Y-%m-%d")
     filename = datetime.now().strftime("%Y%m%d_%H%M%S") + f"_{label[0]}_{predictions[0][predict[0]]}.wav"
     print(f"[INFO] filename: {filename}")
-    object_name = f"Client-{mac_addr}/{date_folder}/{filename}"
+    object_name = f"Client-{mac_addr}/{date_folder}/{user_folder}/{filename}"
 
     # 🔧 Thêm dòng này để reset con trỏ buffer:
     audio_buffer.seek(0)
@@ -181,15 +209,22 @@ def upload_audio(mac_addr: str, audio_buffer: io.BytesIO):
 
 if __name__ == "__main__":
     mac_addr = get_top_mac_address()
-    print("[INFO] Chương trình sẵn sàng. Nhấn 'c' để bắt đầu ghi âm hoặc 'q' để thoát.\n")
+    print("[INFO] Chương trình sẵn sàng.\n")
 
     while True:
-        user_input = input("👉 Nhập 'c' để bắt đầu thu âm (hoặc 'q' để thoát): ").strip().lower()
-        if user_input == 'q':
-            print("[INFO] Kết thúc chương trình.")
+        folder_name = input("👉 Nhập tên thư mục (hoặc 'q' để thoát): ").strip()
+        if folder_name.lower() == "q":
             break
-        elif user_input == 'c':
-            audio_buf = record_audio(duration=20)
-            upload_audio(mac_addr, audio_buf)
+
+        folder_name = folder_name.replace(" ", "_")
+
+        cmd = input("👉 Nhấn 'c' để bắt đầu thu âm (hoặc 'q' để thoát): ").strip().lower()
+
+        if cmd == 'q':
+            break
+        elif cmd == 'c':
+            audio_buf = record_audio_unlimited()
+            upload_audio(mac_addr, audio_buf, folder_name)
         else:
-            print("[INFO] Ký tự không hợp lệ, vui lòng nhập lại.")
+            print("[INFO] Ký tự không hợp lệ.")
+
