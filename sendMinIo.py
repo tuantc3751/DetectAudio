@@ -212,7 +212,7 @@ if __name__ == "__main__":
     print("[INFO] Chương trình sẵn sàng.\n")
 
     while True:
-        folder_name = input("👉 Nhập tên thư mục (hoặc 'q' để thoát): ").strip()
+        folder_name = input("👉 Nhập tên học sinh (hoặc 'q' để thoát): ").strip()
         if folder_name.lower() == "q":
             break
 
