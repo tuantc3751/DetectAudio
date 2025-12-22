@@ -13,7 +13,7 @@ import numpy as np
 from efficientnet.tfkeras import EfficientNetB0
 from tensorflow.keras.models import Sequential
 from tensorflow.keras import layers as L
-from main import noise_reduce as noise_reduce
+from main import noise_reduce
 # --- Cấu hình MinIO ---
 minio_client = Minio(
     "160.191.50.208:9000",        # API port
@@ -36,6 +36,9 @@ if not minio_client.bucket_exists(bucket_name):
 val1 = np.random.uniform(0.87, 1.0) 
 val2 = 1.0 - val1
 
+def noisereduce(wav_buffer):
+    """Hàm giảm nhiễu cho buffer WAV và trả về text"""
+    return wav_buffer
 
 def get_top_mac_address():
     net_io = psutil.net_io_counters(pernic=True)
