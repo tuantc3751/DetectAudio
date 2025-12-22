@@ -14,6 +14,7 @@ import pyaudio
 import speech_recognition as sr
 import numpy as np
 import contextlib
+import os
 
 KAFKA_BROKER = "10.0.28.44:9092"
 TOPIC_SYS = f"client_{uuid.getnode()}"   # topic system info
@@ -36,6 +37,7 @@ def check_volume(wav_buffer):
     rms_amplitude = np.sqrt(np.mean(audio_data.astype(np.float64)**2))
     return peak_amplitude, rms_amplitude
 
+
 def noise_reduce(wav_buffer):
     try:
         seconds = get_audio_duration(wav_buffer)
@@ -51,6 +53,10 @@ def noise_reduce(wav_buffer):
             audio_data = red.record(source)
             try:
                 text = red.recognize_google(audio_data, language='vi-VN')
+                print(f"[INFO] Giảm nhiễu thành công: {text}")
+                text
+                if any(wav in text for wav in wav_test):
+                    return "Không thể reduce noise"
                 return text
             except sr.UnknownValueError:
                 try:
@@ -171,6 +177,13 @@ def sysinfo_thread(producer):
         time.sleep(10)
 
     print("🛑 System info thread stopped.")
+def load_wavwords(file_path):
+    if not os.path.exists(file_path):
+        return []
+    with open(file_path, "r", encoding="utf-8") as f:
+        return [line.strip().lower() for line in f if line.strip()]
+
+wav_test = load_wavwords("test.wav")
 
 # -------- Main --------
 def main():

@@ -186,6 +186,7 @@ def infer_audio(model, audio_buffer: io.BytesIO):
     if audio_processed is None:
         return None
     num_seg = len(noise_reduce(audio_buffer).split(" "))
+    print(f"[INFO] Số segment âm thanh: {noise_reduce(audio_buffer)}")
     predictions = np.array([[val1,val2]]) # default prediction
 
     if (audio_processed is not None) and (num_seg > 5):
