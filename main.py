@@ -53,8 +53,6 @@ def noise_reduce(wav_buffer):
             audio_data = red.record(source)
             try:
                 text = red.recognize_google(audio_data, language='vi-VN')
-                print(f"[INFO] Giảm nhiễu thành công: {text}")
-                text
                 if any(wav in text for wav in wav_test):
                     return "Không thể reduce noise"
                 return text
