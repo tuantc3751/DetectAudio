@@ -15,7 +15,7 @@ from tensorflow.keras import layers as L
 
 # --- Cấu hình MinIO ---
 minio_client = Minio(
-    "160.191.50.208:9000",        # API port
+    "165.22.52.162:9000",        # API port
     access_key="admin",       # thay bằng user của bạn
     secret_key="admin123",  # thay bằng password
     secure=False

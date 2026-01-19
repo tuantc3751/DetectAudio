@@ -42,7 +42,7 @@ def get_top_mac_address():
 
 # --- Dùng cùng một MAC ---
 MAC_ADDR = get_top_mac_address()
-KAFKA_BROKER = "160.191.50.208:9092"
+KAFKA_BROKER = "165.22.52.162:9092"
 TOPIC = f"Iot-{MAC_ADDR}"
 
 def bytes_to_gb(bytes_value):
