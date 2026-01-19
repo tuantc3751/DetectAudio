@@ -8,3 +8,4 @@ tensorflow
 librosa
 soundfile
 efficientnet
+SpeechRecognition
